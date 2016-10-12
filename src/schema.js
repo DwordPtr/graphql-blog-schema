@@ -25,6 +25,27 @@ import {
   DEFINE YOUR TYPES BELOW
 **/
 
+const Mutation = new GraphQLObjectType({
+  name: "BlogMutations",
+  description: "Mutations of our blog",
+  fields: () => ({
+    createPost: {
+      type: Post,
+      args: {
+        title: {type: new GraphQLNonNull(GraphQLString)},
+        content: {type: new GraphQLNonNull(GraphQLString)}
+      },
+      resolve: function(source, args) {
+        let post = Object.assign({},args);
+        post._id = `${Date.now()}::${Math.ceil(Math.random() * 9999999999)}`;
+        post.author = "arunoda";
+        PostsList.push(post);
+        return post;
+      }
+    }
+  })
+});
+
 const Author = new GraphQLObjectType({
   name: 'Author',
   description: 'This represent an author',
@@ -74,9 +95,11 @@ const Query = new GraphQLObjectType({
   })
 });
 
+
 // This the Schema
 const Schema = new GraphQLSchema({
-  query: Query
+  query: Query,
+  mutation: Mutation
 });
 
 export default Schema;
