@@ -10,7 +10,9 @@ import {
   GraphQLEnumType,
   GraphQLNonNull
 } from 'graphql';
-
+const mongo = require('promised-mongo');
+const db = mongo('mongodb://localhost:27017/mydb');
+const authorsCollection = db.collection('authors');
 const Author = new GraphQLObjectType({
   name: 'Author',
   description: 'Represent the type of an author of a blog post or a comment',
@@ -19,15 +21,20 @@ const Author = new GraphQLObjectType({
     name: {type: GraphQLString},
     twitterHandle: {type: GraphQLString}
   })
-});
+  });
 
 const Query = new GraphQLObjectType({
   name: 'RootQuery',
   fields: {
     authors: {
       type: new GraphQLList(Author),
-      resolve: function() {
-        return [];
+      resolve: function(rootValue, args, info) {
+        let fields = {};
+          let fieldASTs = info.fieldASTs;
+          fieldASTs[0].selectionSet.selections.map(function(selection){
+            fields[selection.name.value] = 1;
+          });
+          return authorsCollection.find({},fields).toArray();
       }
     }
   }
@@ -44,7 +51,9 @@ const Mutation = new GraphQLObjectType({
         twitterHandle: {type: GraphQLString}
       },
       resolve: function(rootValue, args) {
-        throw new Error('Not Implemented')
+        let author = Object.assign({},args);
+        return authorsCollection.insert(author)
+        .then(_ => author);
       }
     }
   }
